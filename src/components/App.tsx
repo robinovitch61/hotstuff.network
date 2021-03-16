@@ -21,12 +21,28 @@ export type HotNode = {
 
 export default function App() {
   const [nodes, updateNodes] = useState<HotNode[]>([]);
+  const [scaleFactor, updateScaleFactor] = useState(1);
+  const [translateX, updateTranslateX] = useState(0);
+  const [translateY, updateTranslateY] = useState(0);
+  const [canvas, updateCanvas] = useState<p5Types.Renderer | undefined>(undefined);
+
 
   function addNode(node: HotNode) {
     updateNodes([...nodes, node]);
   }
 
   return (
-      <Canvas nodes={nodes} addNode={addNode}/>
+      <Canvas
+          nodes={nodes}
+          addNode={addNode}
+          canvas={canvas}
+          updateCanvas={updateCanvas}
+          scaleFactor={scaleFactor}
+          updateScaleFactor={updateScaleFactor}
+          translateX={translateX}
+          updateTranslateX={updateTranslateX}
+          translateY={translateY}
+          updateTranslateY={updateTranslateY}
+      />
   );
 };

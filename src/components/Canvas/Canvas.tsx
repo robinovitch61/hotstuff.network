@@ -7,6 +7,14 @@ import Qty from 'js-quantities';
 type CanvasProps = {
   nodes: HotNode[]
   addNode: (node: HotNode) => void
+  canvas: p5Types.Renderer | undefined
+  updateCanvas: (c: p5Types.Renderer) => void
+  scaleFactor: number
+  updateScaleFactor: (s: number) => void
+  translateX: number
+  updateTranslateX: (x: number) => void
+  translateY: number
+  updateTranslateY: (y: number) => void
 }
 
 export default function Canvas(props: CanvasProps) {
@@ -19,9 +27,9 @@ export default function Canvas(props: CanvasProps) {
   // const theseNodes: HotNode[] = [];
 
   let canResetView = false;
-  let translateX = 0;
-  let translateY = 0;
-  let scaleFactor = 1;
+  // let translateX = 0;
+  // let translateY = 0;
+  // let scaleFactor = 1;
 
   function getScaleAdjustment(requestedScroll: number): number {
     if (requestedScroll < 0) {
@@ -33,20 +41,26 @@ export default function Canvas(props: CanvasProps) {
 
   const handleMouseWheel = (p5: p5Types, event: WheelEvent) => {
     const scaleAdjustment = getScaleAdjustment(event.deltaY);
-    scaleFactor *= scaleAdjustment;
-    translateX = p5.mouseX * (1 - scaleAdjustment) + translateX * scaleAdjustment;
-    translateY = p5.mouseY * (1 - scaleAdjustment) + translateY * scaleAdjustment;
-    console.log(`scaleFactor ${scaleFactor}`);
-    console.log(`translateX ${translateX}`);
-    console.log(`translateY ${translateY}`);
+    props.updateScaleFactor(props.scaleFactor * scaleAdjustment);
+    // scaleFactor *= scaleAdjustment;
+    props.updateTranslateX(p5.mouseX * (1 - scaleAdjustment) + props.translateX * scaleAdjustment);
+    // translateX = p5.mouseX * (1 - scaleAdjustment) + translateX * scaleAdjustment;
+    props.updateTranslateY(p5.mouseY * (1 - scaleAdjustment) + props.translateY * scaleAdjustment);
+    // translateY = p5.mouseY * (1 - scaleAdjustment) + translateY * scaleAdjustment;
+    // console.log(`scaleFactor ${scaleFactor}`);
+    // console.log(`translateX ${translateX}`);
+    // console.log(`translateY ${translateY}`);
     canResetView = true;
   };
 
   function setup(p5: p5Types) {
     console.log(`windowWidth: ${p5.windowWidth}`);
     console.log(`windowHeight: ${p5.windowHeight}`);
-    const canvas = p5.createCanvas(p5.windowWidth, p5.windowHeight);
-    canvas.mouseWheel((event: WheelEvent) => handleMouseWheel(p5, event));
+    if (props.canvas === undefined) {
+      const canvas = p5.createCanvas(p5.windowWidth, p5.windowHeight);
+      canvas.mouseWheel((event: WheelEvent) => handleMouseWheel(p5, event));
+      props.updateCanvas(canvas);
+    }
   }
 
   function drawCircle(p5: p5Types, topLeftCorner: Point, bottomRightCorner: Point) {
@@ -64,8 +78,10 @@ export default function Canvas(props: CanvasProps) {
   let frameCount = 0;
   function draw(p5: p5Types) {
     p5.background(255);
-    p5.translate(translateX, translateY);
-    p5.scale(scaleFactor);
+    p5.translate(props.translateX, props.translateY);
+    p5.scale(props.scaleFactor);
+    p5.translate(props.translateX, props.translateY);
+    p5.scale(props.scaleFactor);
     if (frameCount % 50 === 0) {
       console.log(`mouseX: ${p5.mouseX}`);
       console.log(`mouseY: ${p5.mouseY}`);
@@ -82,16 +98,15 @@ export default function Canvas(props: CanvasProps) {
     p5.text(p5.keyCode, 33, 65);
 
     if (p5.mouseIsPressed) {
-      translateX -= p5.pmouseX - p5.mouseX;
-      translateY -= p5.pmouseY - p5.mouseY;
-      console.log(`translateX ${translateX}`);
-      console.log(`translateY ${translateY}`);
+      props.updateScaleFactor(1);
+      props.updateTranslateX(props.translateX - p5.pmouseX - p5.mouseX);
+      props.updateTranslateY(props.translateY - p5.pmouseY - p5.mouseY);
       canResetView = true;
     }
     if (canResetView && p5.keyIsDown(RESET_VIEW_KEY)) {
-      scaleFactor = 1;
-      translateX = 0;
-      translateY = 0;
+      props.updateScaleFactor(1);
+      props.updateTranslateX(0);
+      props.updateTranslateY(0);
       canResetView = false;
       console.log('reset');
     }
@@ -103,15 +118,15 @@ export default function Canvas(props: CanvasProps) {
   };
 
   const doubleClicked = (p5: p5Types) => {
-    const halfWidth = Math.floor(DEFAULT_NODE_WIDTH / 2) * scaleFactor;
-    const halfHeight = Math.floor(DEFAULT_NODE_HEIGHT / 2) * scaleFactor;
+    const halfWidth = Math.floor(DEFAULT_NODE_WIDTH / 2) * props.scaleFactor;
+    const halfHeight = Math.floor(DEFAULT_NODE_HEIGHT / 2) * props.scaleFactor;
     const topLeftCorner: Point = {
-      xPos:  (p5.mouseX - halfWidth - translateX) / scaleFactor,
-      yPos: (p5.mouseY - halfHeight - translateY) / scaleFactor
+      xPos:  (p5.mouseX - halfWidth - props.translateX) / props.scaleFactor,
+      yPos: (p5.mouseY - halfHeight - props.translateY) / props.scaleFactor
     };
     const bottomRightCorner: Point = {
-      xPos: (p5.mouseX + halfWidth - translateX) / scaleFactor,
-      yPos: (p5.mouseY + halfHeight - translateY) / scaleFactor
+      xPos: (p5.mouseX + halfWidth - props.translateX) / props.scaleFactor,
+      yPos: (p5.mouseY + halfHeight - props.translateY) / props.scaleFactor
     };
     const newNode: HotNode = {
       topLeftCorner,
@@ -122,7 +137,6 @@ export default function Canvas(props: CanvasProps) {
       isBoundary: false
     };
     props.addNode(newNode);
-    // theseNodes.push(newNode);
   };
 
   return (
