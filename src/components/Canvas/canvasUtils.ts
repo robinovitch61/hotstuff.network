@@ -23,18 +23,16 @@ export function drawCircle(
   color: string,
   isActive: boolean
 ) {
-  context.save();
   context.beginPath();
   context.arc(x, y, radius, 0, 2 * Math.PI);
   context.fillStyle = color;
   context.fill();
   if (isActive) {
-    // inset
-    context.arc(x, y, radius - activeNodeStrokeWidth / 2, 0, 2 * Math.PI);
+    // TODO: fix inset
     context.lineWidth = activeNodeStrokeWidth;
+    context.arc(x, y, radius - activeNodeStrokeWidth, 0, 2 * Math.PI);
     context.stroke();
   }
-  context.restore();
 }
 
 export function drawArrow(
@@ -84,8 +82,8 @@ export function intersectsCircle(
 
 // transforms clicked coordinates to what gets stored in node data
 export function toNodeCoords(
-  canvas: HTMLCanvasElement,
   point: Point,
+  canvas: HTMLCanvasElement,
   offset: Point,
   scale: number
 ) {
@@ -93,5 +91,19 @@ export function toNodeCoords(
   return makePoint(
     (point.x - boundingRect.left + offset.x) / scale,
     (point.y - boundingRect.top + offset.y) / scale
+  );
+}
+
+// transforms node coordinates to what gets clicked
+export function toMouseCoords(
+  point: Point,
+  canvas: HTMLCanvasElement,
+  offset: Point,
+  scale: number
+) {
+  const boundingRect = canvas.getBoundingClientRect();
+  return makePoint(
+    point.x * scale + boundingRect.left - offset.x,
+    point.y * scale + boundingRect.top - offset.y
   );
 }

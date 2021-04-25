@@ -12,10 +12,12 @@ import { addPoints, diffPoints, ORIGIN, Point } from "../pointUtils";
  */
 export default function usePan(): [
   Point,
+  Point,
   React.Dispatch<React.SetStateAction<Point>>,
   (e: SyntheticMouseEvent) => void
 ] {
-  const [offset, setOffset] = useState<Point>(ORIGIN);
+  const [absOffset, setAbsOffset] = useState<Point>(ORIGIN);
+  const [incOffset, setIncOffset] = useState<Point>(ORIGIN);
 
   // Track the last observed mouse position on pan.
   const lastMousePos = useRef(ORIGIN);
@@ -30,10 +32,11 @@ export default function usePan(): [
     //
     // Then, apply that delta to the current pan offset and set that as the new
     // state.
-    setOffset((prevOffset) => {
+    setAbsOffset((prevOffset) => {
       const delta = diffPoints(lastPoint, currMousePos);
       return addPoints(prevOffset, delta);
     });
+    setIncOffset(diffPoints(lastPoint, currMousePos));
   }, []);
 
   // Tear down listeners.
@@ -52,5 +55,5 @@ export default function usePan(): [
     [mouseMove, mouseUp]
   );
 
-  return [offset, setOffset, startMouseMove];
+  return [incOffset, absOffset, setAbsOffset, startMouseMove];
 }

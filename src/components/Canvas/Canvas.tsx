@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import * as canvasUtils from "./canvasUtils";
 import styled from "styled-components";
 import { AppConnection, AppNode } from "../App";
 import {
@@ -23,6 +22,8 @@ import {
   intersectsCircle,
   toNodeCoords,
   drawArrow,
+  toMouseCoords,
+  rescaleCanvas,
 } from "./canvasUtils";
 import useNodeMove from "./hooks/useNodeMove";
 import useMakeConnection from "./hooks/useMakeConnection";
@@ -72,11 +73,12 @@ function draw(
 }
 
 export default function Canvas(props: CanvasProps) {
-  const [windowWidth, windowHeight] = useWindowSize();
-  const [offset, setOffset, startPan] = usePan();
-  const ref = useRef<HTMLCanvasElement | null>(null);
-  const scale = useScale(ref, zoomIncrement, minZoom, maxZoom);
   const activeNodeRef = useRef<AppNode>();
+  const [windowWidth, windowHeight] = useWindowSize();
+  const [incOffset, absOffset, setAbsOffset, startPan] = usePan();
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const sharedContextRef = useRef<CanvasRenderingContext2D>();
+  const scale = useScale(canvasRef, zoomIncrement, minZoom, maxZoom);
   // const mousePosRef = useMousePos(ref);
   const [nodeMoveOffset, startNodeMove] = useNodeMove();
   const [
@@ -87,10 +89,39 @@ export default function Canvas(props: CanvasProps) {
 
   const { nodes, connections } = props;
 
-  // set offset to middle of canvas to zoom about center
+  // load shared drawing context
+  useEffect(() => {
+    // get context and canvas
+    const canvas = canvasRef.current;
+    if (canvas === null) {
+      return;
+    }
+    const context = canvas.getContext("2d");
+    if (context === null) {
+      return;
+    }
+    sharedContextRef.current = context;
+  }, [canvasRef.current]);
+
+  // rescale context based on screen
   useLayoutEffect(() => {
-    setOffset(makePoint(-props.canvasWidth / 2, -props.canvasHeight / 2));
-  }, [props.canvasHeight, props.canvasWidth]);
+    // get context and canvas
+    const canvas = canvasRef.current;
+    if (canvas === null) {
+      return;
+    }
+    const context = sharedContextRef.current;
+    if (context === undefined) {
+      return;
+    }
+    // adjust for pixel clarity based on screen
+    rescaleCanvas(canvas, context, props.canvasWidth, props.canvasHeight);
+  }, [canvasRef.current, sharedContextRef.current]);
+
+  // // set offset to middle of canvas to zoom about center
+  // useLayoutEffect(() => {
+  //   setAbsOffset(makePoint(-props.canvasWidth / 2, -props.canvasHeight / 2));
+  // }, [props.canvasHeight, props.canvasWidth]);
 
   // move active node if it's moving
   useLayoutEffect(() => {
@@ -113,19 +144,23 @@ export default function Canvas(props: CanvasProps) {
       return;
     }
     // get context and canvas
-    const canvas = ref.current;
+    const canvas = canvasRef.current;
     if (canvas === null) {
       return;
     }
-    const context = canvas.getContext("2d");
-    if (context === null) {
+
+    const context = sharedContextRef.current;
+    if (context === undefined) {
       return;
     }
+
+    context.fillStyle = "blue";
+    context.fillRect(0, 0, canvas.width, canvas.height);
 
     drawArrow(
       context,
       activeNodeRef.current.center,
-      toNodeCoords(canvas, makeConnectionMouse, offset, scale),
+      toNodeCoords(makeConnectionMouse, canvas, absOffset, scale),
       "grey"
     );
   }, [makeConnectionMouse, makeConnectionDone]);
@@ -133,7 +168,7 @@ export default function Canvas(props: CanvasProps) {
   // main canvas update hook
   useLayoutEffect(() => {
     // get context and canvas
-    const canvas = ref.current;
+    const canvas = canvasRef.current;
     if (canvas === null) {
       return;
     }
@@ -141,16 +176,13 @@ export default function Canvas(props: CanvasProps) {
     if (context === null) {
       return;
     }
+    // sharedContextRef.current = context;
+    // const context = sharedContextRef.current;
+    // if (context === undefined) {
+    //   return;
+    // }
 
-    // adjust for pixel clarity based on screen
-    canvasUtils.rescaleCanvas(
-      canvas,
-      context,
-      props.canvasWidth,
-      props.canvasHeight
-    );
-
-    context.translate(-offset.x, -offset.y);
+    context.translate(-incOffset.x, -incOffset.y);
 
     // TODO: scale about mouse?? (http://phrogz.net/tmp/canvas_zoom_to_cursor.html, https://www.jclem.net/posts/pan-zoom-canvas-react, https://stackoverflow.com/questions/2916081/zoom-in-on-a-point-using-scale-and-translate)
     context.scale(scale, scale);
@@ -180,15 +212,7 @@ export default function Canvas(props: CanvasProps) {
     // context.restore();
 
     draw(context, nodes, connections);
-  }, [
-    nodes,
-    connections,
-    windowWidth,
-    windowHeight,
-    offset.x,
-    offset.y,
-    scale,
-  ]);
+  }, [nodes, connections, incOffset, scale]);
 
   function handleDoubleClick(
     canvas: HTMLCanvasElement,
@@ -211,9 +235,9 @@ export default function Canvas(props: CanvasProps) {
     const newAppNode = {
       ...newNode,
       center: toNodeCoords(
-        canvas,
         makePoint(event.clientX, event.clientY),
-        offset,
+        canvas,
+        absOffset,
         scale
       ),
       radius: defaultNodeRadius,
@@ -224,27 +248,23 @@ export default function Canvas(props: CanvasProps) {
   }
 
   function handleOnMouseDown(event: React.MouseEvent<HTMLCanvasElement>) {
-    const canvas = ref.current;
+    const canvas = canvasRef.current;
     if (canvas === null) {
       return;
     }
 
     let nodeClicked = false;
     nodes.some((node) => {
-      if (
-        intersectsCircle(
-          toNodeCoords(
-            canvas,
-            makePoint(event.clientX, event.clientY),
-            offset,
-            scale
-          ),
-          node.center,
-          node.radius
-        )
-      ) {
+      const mousePos = makePoint(event.clientX, event.clientY);
+      const clickedNode = intersectsCircle(
+        mousePos,
+        toMouseCoords(node.center, canvas, absOffset, scale),
+        node.radius
+      );
+      if (clickedNode) {
         nodeClicked = true;
         props.setActiveNode(node.id);
+        // TODO: less janky updating active node
         activeNodeRef.current = { ...node, isActive: true };
         if (event.altKey) {
           startMakeConnection(event);
@@ -263,10 +283,10 @@ export default function Canvas(props: CanvasProps) {
   return (
     <>
       <StyledCanvas
-        ref={ref}
+        ref={canvasRef}
         onMouseDown={handleOnMouseDown}
         onDoubleClick={(event: React.MouseEvent<HTMLCanvasElement>) => {
-          const canvas = ref.current;
+          const canvas = canvasRef.current;
           if (canvas === null) {
             return;
           }
@@ -274,9 +294,9 @@ export default function Canvas(props: CanvasProps) {
         }}
       />
       <div style={{ position: "absolute", top: 0 }}>
-        {nodes.map((node) => (
+        {/* {nodes.map((node) => (
           <pre>{JSON.stringify(node, null, 2)}</pre>
-        ))}
+        ))} */}
       </div>
     </>
   );
