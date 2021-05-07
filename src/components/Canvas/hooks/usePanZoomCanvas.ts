@@ -12,6 +12,12 @@ import { useCallback, useLayoutEffect, useRef, useState } from "react";
 
 const { maxZoom, minZoom, zoomSensitivity } = config;
 
+type Viewport = {
+  offset: Point;
+  scale: number;
+  viewportTopLeft: Point;
+};
+
 export default function usePanZoomCanvas(
   canvasRef: React.RefObject<HTMLCanvasElement>,
   canvasWidth: number,
@@ -19,6 +25,7 @@ export default function usePanZoomCanvas(
 ): [
   CanvasRenderingContext2D | null,
   (context: CanvasRenderingContext2D) => void,
+  () => void,
   Point,
   Point,
   number,
@@ -32,6 +39,7 @@ export default function usePanZoomCanvas(
   const lastMousePosRef = useRef<Point>(ORIGIN);
   const [mousePos, setMousePos] = useMousePos(canvasRef);
   const isResetRef = useRef<boolean>(false);
+  const savedViewportRef = useRef<Viewport | undefined>(undefined);
 
   const adjustForDevice = useCallback(() => {
     if (context) {
@@ -58,12 +66,30 @@ export default function usePanZoomCanvas(
         lastOffsetRef.current = ORIGIN;
         lastMousePosRef.current = ORIGIN;
 
+        const saved = savedViewportRef.current;
+        if (saved) {
+          context.scale(saved.scale, saved.scale);
+          // setScale(saved.scale);
+
+          const scaledOffset = scalePoint(saved.offset, saved.scale);
+          context.translate(scaledOffset.x, scaledOffset.y);
+          // setOffset(saved.offset);
+          // lastOffsetRef.current = saved.offset;
+          // setViewportTopLeft(saved.viewportTopLeft);
+          // context.translate(-scaledOffset.x, -scaledOffset.y);
+        }
+
         // this thing is so multiple resets in a row don't clear canvas
         isResetRef.current = true;
       }
     },
     [adjustForDevice, setMousePos, lastOffsetRef]
   );
+
+  // save viewport
+  const saveViewport = useCallback(() => {
+    savedViewportRef.current = { offset, scale, viewportTopLeft };
+  }, [offset, scale, viewportTopLeft]);
 
   // reset pixels on canvas dimension change
   useLayoutEffect(() => {
@@ -156,5 +182,13 @@ export default function usePanZoomCanvas(
     return () => canvasElem.removeEventListener("wheel", handleWheel);
   }, [canvasRef, context, mousePos.x, mousePos.y, viewportTopLeft, scale]);
 
-  return [context, reset, viewportTopLeft, offset, scale, startPan];
+  return [
+    context,
+    reset,
+    saveViewport,
+    viewportTopLeft,
+    offset,
+    scale,
+    startPan,
+  ];
 }

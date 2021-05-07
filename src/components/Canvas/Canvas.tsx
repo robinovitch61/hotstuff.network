@@ -32,7 +32,11 @@ const StyledControls = styled.div`
   margin: 0.5em;
 
   > button {
-    padding: 0.5em;
+    padding: 0.5em 1em;
+
+    &:not(:last-child) {
+      margin-right: 1em;
+    }
   }
 `;
 
@@ -76,6 +80,7 @@ export default function Canvas(props: CanvasProps): React.ReactElement {
   const [
     context,
     reset,
+    saveViewport,
     viewportTopLeft,
     offset,
     scale,
@@ -390,9 +395,11 @@ export default function Canvas(props: CanvasProps): React.ReactElement {
       <StyledControls>
         <pre>scale: {scale}</pre>
         <pre>offset: {JSON.stringify(offset)}</pre>
+        <pre>viewportTopLeft: {JSON.stringify(viewportTopLeft)}</pre>
         <button onClick={() => context && reset(context)}>
           Reset Viewport
         </button>
+        <button onClick={saveViewport}>Save Viewport</button>
       </StyledControls>
       <StyledCanvas
         ref={canvasRef}
