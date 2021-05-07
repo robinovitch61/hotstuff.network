@@ -32,7 +32,8 @@ const StyledControls = styled.div`
   margin: 0.5em;
 
   > button {
-    padding: 0.5em;
+    padding: 0.5em 1em;
+    margin-right: 0.5em;
   }
 `;
 
@@ -76,6 +77,7 @@ export default function Canvas(props: CanvasProps): React.ReactElement {
   const [
     context,
     reset,
+    zoomToFit,
     viewportTopLeft,
     offset,
     scale,
@@ -392,6 +394,9 @@ export default function Canvas(props: CanvasProps): React.ReactElement {
         <pre>offset: {JSON.stringify(offset)}</pre>
         <button onClick={() => context && reset(context)}>
           Reset Viewport
+        </button>
+        <button onClick={() => context && zoomToFit(context, nodes)}>
+          Zoom to Fit
         </button>
       </StyledControls>
       <StyledCanvas

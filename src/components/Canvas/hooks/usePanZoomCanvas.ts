@@ -3,12 +3,14 @@ import useMousePos from "./useMousePos";
 import {
   addPoints,
   diffPoints,
+  makePoint,
   ORIGIN,
   Point,
   scalePoint,
 } from "../pointUtils";
 import config from "../../../config";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { AppNode } from "../../App";
 
 const { maxZoom, minZoom, zoomSensitivity } = config;
 
@@ -19,6 +21,7 @@ export default function usePanZoomCanvas(
 ): [
   CanvasRenderingContext2D | null,
   (context: CanvasRenderingContext2D) => void,
+  (context: CanvasRenderingContext2D, nodes: AppNode[]) => void,
   Point,
   Point,
   number,
@@ -53,6 +56,60 @@ export default function usePanZoomCanvas(
         // reset state and refs
         setContext(context);
         setOffset(ORIGIN);
+        setMousePos(ORIGIN);
+        setViewportTopLeft(ORIGIN);
+        lastOffsetRef.current = ORIGIN;
+        lastMousePosRef.current = ORIGIN;
+
+        // this thing is so multiple resets in a row don't clear canvas
+        isResetRef.current = true;
+      }
+    },
+    [adjustForDevice, setMousePos, lastOffsetRef]
+  );
+
+  // zoom to fit
+  const zoomToFit = useCallback(
+    (context: CanvasRenderingContext2D, nodes: AppNode[]) => {
+      if (context && !isResetRef.current) {
+        const { devicePixelRatio: ratio = 1 } = window;
+        context.canvas.width = canvasWidth * ratio;
+        context.canvas.height = canvasHeight * ratio;
+        context.scale(ratio, ratio);
+
+        const centroidX =
+          nodes.reduce((prevVal, node) => node.center.x + prevVal, 0) /
+          nodes.length;
+        const canvasWidth = context.canvas.width / ratio;
+        const centerX = -centroidX + canvasWidth / 2;
+
+        const centroidY =
+          nodes.reduce((prevVal, node) => node.center.y + prevVal, 0) /
+          nodes.length;
+        const canvasHeight = context.canvas.height / ratio;
+        const centerY = -centroidY + canvasHeight / 2;
+
+        const center = makePoint(centerX, centerY);
+
+        // reset state and refs
+        setContext(context);
+        setOffset(center);
+
+        const minX = Math.min(...nodes.map((node) => node.center.x));
+        const maxX = Math.max(...nodes.map((node) => node.center.x));
+        const minY = Math.min(...nodes.map((node) => node.center.y));
+        const maxY = Math.max(...nodes.map((node) => node.center.y));
+
+        const significantDimension =
+          Math.min(canvasHeight / (maxY - minY), canvasWidth / (maxX - minX)) *
+          0.8; // TODO: MAKE FACTOR
+
+        // context.scale(significantDimension, significantDimension);
+        // context.translate(
+        //   center.x / significantDimension,
+        //   center.y / significantDimension
+        // );
+        // setScale(significantDimension);
         setMousePos(ORIGIN);
         setViewportTopLeft(ORIGIN);
         lastOffsetRef.current = ORIGIN;
@@ -156,5 +213,5 @@ export default function usePanZoomCanvas(
     return () => canvasElem.removeEventListener("wheel", handleWheel);
   }, [canvasRef, context, mousePos.x, mousePos.y, viewportTopLeft, scale]);
 
-  return [context, reset, viewportTopLeft, offset, scale, startPan];
+  return [context, reset, zoomToFit, viewportTopLeft, offset, scale, startPan];
 }
