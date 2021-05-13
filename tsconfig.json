@@ -20,6 +20,9 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
+  "exclude": [
+    "**.stories.ts*"
+  ],
   "include": [
     "src"
   ]

@@ -13,18 +13,18 @@ export default {
 
 export const EmptyBooleanTableCell = Template.bind({});
 EmptyBooleanTableCell.args = {
-  initialIsActive: false,
-  onClick: () => {
-    console.log("clicked!");
+  isActive: false,
+  onClick: (n: boolean) => {
+    console.log(n);
   },
   showWhenActive: "",
 };
 
 export const PopulatedBooleanTableCell = Template.bind({});
 PopulatedBooleanTableCell.args = {
-  initialIsActive: true,
-  onClick: () => {
-    console.log("clicked!");
+  isActive: true,
+  onClick: (n: boolean) => {
+    console.log(n);
   },
   showWhenActive: "✅",
 };

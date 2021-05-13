@@ -2,7 +2,6 @@ import * as React from "react";
 import styled from "styled-components/macro";
 import { AppConnection, AppNode } from "../App";
 import NodeTable from "./EditableTable/NodeTable";
-import ConnectionTable from "./EditableTable/ConnectionTable";
 import Tabs from "../Tabs/Tabs";
 import ModelControls from "./ModelControls";
 
@@ -40,24 +39,24 @@ type SidebarProps = {
 export default function Sidebar(props: SidebarProps): React.ReactElement {
   const nodeTable = (
     <NodeTable
-      rows={props.nodes}
+      nodes={props.nodes}
       updateNode={(node: AppNode) => props.updateNodes([node])}
-      onDeleteRow={(node: AppNode) => props.deleteNodes([node.id])}
+      deleteNode={(nodeId: string) => props.deleteNodes([nodeId])}
     />
   );
 
-  const connectionTable = (
-    <ConnectionTable
-      rows={props.connections}
-      nodes={props.nodes}
-      onUpdateRow={(connection: AppConnection) =>
-        props.updateConnections([connection])
-      }
-      onDeleteRow={(connection: AppConnection) =>
-        props.deleteConnections([connection.id])
-      }
-    />
-  );
+  // const connectionTable = (
+  //   <ConnectionTable
+  //     rows={props.connections}
+  //     nodes={props.nodes}
+  //     onUpdateRow={(connection: AppConnection) =>
+  //       props.updateConnections([connection])
+  //     }
+  //     onDeleteRow={(connection: AppConnection) =>
+  //       props.deleteConnections([connection.id])
+  //     }
+  //   />
+  // );
 
   return (
     <StyledEditor width={props.width} height={props.height}>
@@ -65,7 +64,7 @@ export default function Sidebar(props: SidebarProps): React.ReactElement {
         <Tabs
           tabs={[
             { text: "Nodes", component: nodeTable, width: 0.5 },
-            { text: "Connections", component: connectionTable, width: 0.5 },
+            { text: "Connections", component: <h1>HI</h1>, width: 0.5 },
           ]}
         />
       </StyledTables>

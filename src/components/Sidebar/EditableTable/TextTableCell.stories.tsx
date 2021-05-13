@@ -13,12 +13,12 @@ export default {
 
 export const EmptyTextTableCell = Template.bind({});
 EmptyTextTableCell.args = {
-  initialVal: undefined,
-  onBlur: (newVal) => console.log(`set val to ${newVal}`),
+  value: undefined,
+  onBlur: (newVal) => true,
 };
 
 export const PopulatedTextTableCell = Template.bind({});
 PopulatedTextTableCell.args = {
-  initialVal: "some val",
-  onBlur: (newVal) => console.log(`set val to ${newVal}`),
+  value: "some val",
+  onBlur: (newVal) => true,
 };

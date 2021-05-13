@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useCallback, useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import styled from "styled-components";
 import { AppConnection, AppNode } from "../App";
 import {
@@ -340,8 +340,8 @@ export default function Canvas(props: CanvasProps): React.ReactElement {
   return (
     <StyledCanvasWrapper>
       <StyledControls>
-        {/* <pre>nodes: {JSON.stringify(nodes, null, 2)}</pre> */}
-        <pre>conns: {JSON.stringify(connections, null, 2)}</pre>
+        <pre>nodes: {JSON.stringify(nodes, null, 2)}</pre>
+        {/* <pre>conns: {JSON.stringify(connections, null, 2)}</pre> */}
         <pre>scale: {scale}</pre>
         <pre>offset: {JSON.stringify(offset)}</pre>
         <button onClick={() => context && reset(context)}>

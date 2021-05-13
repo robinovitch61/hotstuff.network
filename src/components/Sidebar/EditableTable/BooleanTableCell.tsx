@@ -12,33 +12,27 @@ const StyledCheckbox = styled.div`
 `;
 
 export type BooleanTableCellProps = {
-  initialIsActive?: boolean;
-  onClick: (isActive: boolean) => void;
+  isActive: boolean;
+  onClick: (newIsActive: boolean) => void;
   showWhenActive: string;
 };
 
 export default function BooleanTableCell(
   props: BooleanTableCellProps
 ): React.ReactElement {
-  const [isActive, setIsActive] = useState<boolean>(
-    props.initialIsActive !== undefined ? props.initialIsActive : false
-  );
-
   return (
     <StyledCheckbox
       tabIndex={0}
       onKeyUp={(event: React.KeyboardEvent) => {
         if (event.key === "Enter") {
-          setIsActive(!isActive);
-          props.onClick(isActive);
+          props.onClick(!props.isActive);
         }
       }}
       onClick={() => {
-        setIsActive(!isActive);
-        props.onClick(isActive);
+        props.onClick(!props.isActive);
       }}
     >
-      &nbsp;{isActive ? props.showWhenActive : ""}
+      &nbsp;{props.isActive ? props.showWhenActive : ""}
     </StyledCheckbox>
   );
 }
