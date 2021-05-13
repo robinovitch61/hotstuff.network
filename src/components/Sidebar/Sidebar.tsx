@@ -41,7 +41,7 @@ export default function Sidebar(props: SidebarProps): React.ReactElement {
   const nodeTable = (
     <NodeTable
       rows={props.nodes}
-      onUpdateRow={(node: AppNode) => props.updateNodes([node])}
+      updateNode={(node: AppNode) => props.updateNodes([node])}
       onDeleteRow={(node: AppNode) => props.deleteNodes([node.id])}
     />
   );

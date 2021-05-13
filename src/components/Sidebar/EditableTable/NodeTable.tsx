@@ -1,8 +1,28 @@
 import React, { useState } from "react";
+import styled from "styled-components/macro";
 import config from "../../../config";
 import { AppNode } from "../../App";
 import EditableTable, { Column } from "./EditableTable";
 import { SortState } from "./SortableTableHeader";
+import TextTableCell from "./TextTableCell";
+
+const StyledTableWrapper = styled.div`
+  width: 100%;
+`;
+
+const StyledTable = styled.div`
+  width: 100%;
+  border-collapse: collapse;
+`;
+
+const StyledRow = styled.div<{ heightOffsetPx?: number }>`
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  position: sticky;
+  top: ${({ heightOffsetPx }) =>
+    heightOffsetPx ? `${heightOffsetPx}px` : "0px"};
+`;
 
 const defaultNodeSortState: SortState<AppNode> = {
   key: "name",
@@ -43,8 +63,8 @@ const nodeColumns: Column<AppNode>[] = [
 ];
 
 export type NodeTableProps = {
-  rows: AppNode[];
-  onUpdateRow: (row: AppNode) => void;
+  nodes: AppNode[];
+  updateNode: (row: AppNode) => void;
   onDeleteRow: (row: AppNode) => void;
 };
 
@@ -61,17 +81,31 @@ export default function NodeTable(props: NodeTableProps): React.ReactElement {
     }
   }
 
+  const tableRows = [...props.nodes].sort(sortByState).map((node) => {
+    return (
+      <StyledRow key={node.id} heightOffsetPx={config.tabHeightPx}>
+        <TextTableCell
+          initialVal={node.name}
+          onBlur={(newName) => props.updateNode({ ...node, name: newName })}
+        />
+      </StyledRow>
+    );
+  });
+
   return (
-    <EditableTable<AppNode>
-      columns={nodeColumns}
-      rowData={[...props.rows].sort(sortByState)}
-      onUpdateRow={props.onUpdateRow}
-      onDeleteRow={props.onDeleteRow}
-      onUpdateSortState={(newSortState: SortState<AppNode>) =>
-        setSortState(newSortState)
-      }
-      sortState={sortState}
-      heightOffsetPx={config.tabHeightPx}
-    />
+    <StyledTableWrapper>
+      <StyledTable>
+        <StyledColHeader
+          key={col.key.toString()}
+          onClick={onClick}
+          width={col.width}
+          minWidth={col.minWidthPx}
+        >
+          <StyledColText>{col.text}</StyledColText>
+          <StyledSortIcon>{isSortedCol ? sortIcon : ""}</StyledSortIcon>
+        </StyledColHeader>
+        <StyledTableBody>{tableRows}</StyledTableBody>
+      </StyledTable>
+    </StyledTableWrapper>
   );
 }
