@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { StyledInput } from "./sharedStyled";
+import { StyledInput } from "./sharedStyles";
 
 export type NumericalTableCellProps = {
   initialVal: number;

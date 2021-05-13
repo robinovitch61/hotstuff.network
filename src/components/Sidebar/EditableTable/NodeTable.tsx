@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import styled from "styled-components/macro";
 import config from "../../../config";
 import { AppNode } from "../../App";
-import BooleanTableCell from "./BooleanTableCell";
-import NumericalTableCell from "./NumericalTableCell";
-import TextTableCell from "./TextTableCell";
+import BooleanTableCell from "./cells/BooleanTableCell";
+import NumericalTableCell from "./cells/NumericalTableCell";
+import TextTableCell from "./cells/TextTableCell";
 
 type SortDirection = "ASC" | "DESC";
 type SortState<T> = { key: keyof T; direction: SortDirection };
